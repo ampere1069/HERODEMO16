@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090909">
+  <meta name="description" content="MRT Dashboard executive decision support system">
+  <title>MRT DASHBOARD | NV03</title>
+  <style>
+    :root {
+      --ink: #090909;
+      --paper: #f1efe8;
+      --signal: #ff3b18;
+      --signal-soft: rgba(255, 59, 24, .24);
+      --line: rgba(241, 239, 232, .28);
+      --muted: rgba(241, 239, 232, .68);
+      --ease: cubic-bezier(.22, 1, .36, 1);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      background: var(--ink);
+      color: var(--paper);
+      overflow: hidden;
+    }
+    body {
+      min-height: 100dvh;
+      font-family: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; }
+    [hidden] { display: none !important; }
+    .hero {
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      min-height: 100dvh;
+      overflow: hidden;
+      background: #080808;
+    }
+    .film,
+    .film::after,
+    .film video,
+    .shutters,
+    .scan,
+    .grain {
+      position: absolute;
+      inset: 0;
+    }
+    .film {
+      z-index: -5;
+      overflow: hidden;
+      background: #05070d;
+    }
+    .film video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: saturate(.72) contrast(1.24) brightness(.72);
+      transform: translate3d(8vw, -1vh, 0) scale(1.5);
+      transform-origin: center center;
+      will-change: transform;
+    }
+    .film::after {
+      content: "";
+      background:
+        linear-gradient(90deg, rgba(8, 8, 8, .90) 0%, rgba(8, 8, 8, .38) 37%, rgba(8, 8, 8, .12) 68%, rgba(8, 8, 8, .55) 100%),
+        linear-gradient(180deg, rgba(8, 8, 8, .45), transparent 28%, transparent 69%, rgba(8, 8, 8, .82));
+      pointer-events: none;
+    }
+    .shutters {
+      z-index: -2;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      pointer-events: none;
+    }
+    .shutter {
+      background: var(--ink);
+      transform-origin: top;
+      border-right: 1px solid rgba(241, 239, 232, .06);
+      will-change: transform;
+    }
+    .grain {
+      z-index: 8;
+      opacity: .15;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.72'/%3E%3C/svg%3E");
+    }
+    .scan {
+      z-index: 7;
+      height: 16vh;
+      top: -22vh;
+      bottom: auto;
+      opacity: .6;
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(255, 59, 24, .08) 50%, rgba(255, 59, 24, .9) 51%, transparent 53%);
+      mix-blend-mode: screen;
+      will-change: transform;
+    }
+    .frame {
+      position: absolute;
+      inset: clamp(16px, 2.2vw, 34px);
+      z-index: 4;
+      border: 1px solid var(--line);
+      pointer-events: none;
+    }
+    .frame::before,
+    .frame::after {
+      content: "";
+      position: absolute;
+      background: var(--signal);
+    }
+    .frame::before {
+      width: 84px;
+      height: 6px;
+      top: -3px;
+      left: 9.5vw;
+    }
+    .frame::after {
+      width: 6px;
+      height: 84px;
+      right: -3px;
+      bottom: 12vh;
+    }
+    .masthead {
+      position: absolute;
+      z-index: 5;
+      top: clamp(30px, 4vw, 58px);
+      left: clamp(30px, 5.2vw, 92px);
+      right: clamp(30px, 5.2vw, 92px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand,
+    .edition {
+      margin: 0;
+      font: 700 clamp(10px, .72vw, 12px)/1.2 "Courier New", monospace;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .edition { color: var(--muted); }
+    .content {
+      position: absolute;
+      z-index: 5;
+      left: clamp(28px, 5.2vw, 92px);
+      right: clamp(28px, 5.2vw, 92px);
+      top: 50%;
+      transform: translateY(-47%);
+    }
+    .kicker {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin: 0 0 clamp(18px, 2.4vh, 28px);
+      color: var(--signal);
+      font: 700 clamp(10px, .76vw, 13px)/1 "Courier New", monospace;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+    .kicker::before {
+      content: "";
+      width: 42px;
+      height: 2px;
+      background: currentColor;
+    }
+    .title {
+      position: relative;
+      max-width: min(82vw, 1320px);
+      margin: 0;
+      font-size: clamp(72px, 13.6vw, 248px);
+      font-weight: 900;
+      line-height: .72;
+      letter-spacing: -.075em;
+      text-transform: uppercase;
+    }
+    .word {
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      overflow: hidden;
+      padding-right: .08em;
+    }
+    .word-inner {
+      display: block;
+      transform-origin: left center;
+      will-change: transform;
+    }
+    .word-dreams {
+      margin-left: 10.8vw;
+      color: transparent;
+      -webkit-text-stroke: clamp(1px, .13vw, 3px) var(--paper);
+      text-stroke: clamp(1px, .13vw, 3px) var(--paper);
+    }
+    .word-dreams::after {
+      content: "DASHBOARD";
+      position: absolute;
+      left: 10.8vw;
+      bottom: 0;
+      color: var(--signal);
+      -webkit-text-stroke: 0;
+      clip-path: inset(54% 0 10% 0);
+      transform: translateX(.035em);
+      opacity: .94;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+    .statement {
+      display: grid;
+      grid-template-columns: minmax(190px, 330px) auto;
+      align-items: end;
+      gap: clamp(30px, 6vw, 110px);
+      width: min(74vw, 1080px);
+      margin: clamp(30px, 4.4vh, 56px) 0 0 11.2vw;
+    }
+    .statement p {
+      margin: 0;
+      color: var(--paper);
+      font-size: clamp(15px, 1.28vw, 21px);
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+    .statement .meta {
+      max-width: 260px;
+      color: var(--muted);
+      font: 700 clamp(9px, .66vw, 11px)/1.55 "Courier New", monospace;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .controls {
+      position: absolute;
+      z-index: 9;
+      right: clamp(30px, 5.2vw, 92px);
+      bottom: clamp(30px, 4.8vw, 76px);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .play-control {
+      min-width: 132px;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid rgba(241, 239, 232, .55);
+      border-radius: 0;
+      background: rgba(9, 9, 9, .42);
+      color: var(--paper);
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+      font: 700 11px/1 "Courier New", monospace;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .play-control:hover {
+      background: var(--signal);
+      border-color: var(--signal);
+      color: #090909;
+    }
+    .play-control:active { transform: scale(.97); }
+    .play-control:focus-visible {
+      outline: 3px solid var(--paper);
+      outline-offset: 4px;
+    }
+    .pulse-bar {
+      width: clamp(70px, 8vw, 130px);
+      height: 1px;
+      overflow: hidden;
+      background: rgba(241, 239, 232, .28);
+    }
+    .pulse-bar span {
+      display: block;
+      width: 42%;
+      height: 100%;
+      background: var(--signal);
+      transform: translateX(-110%);
+      will-change: transform;
+    }
+    .fallback {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: #080808;
+      font: 700 12px/1.5 "Courier New", monospace;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    @media (max-width: 760px) {
+      .film video {
+        object-position: 60% center;
+        transform: translate3d(6vw, 0, 0) scale(1.38);
+      }
+      .film::after {
+        background:
+          linear-gradient(180deg, rgba(8, 8, 8, .58), rgba(8, 8, 8, .1) 42%, rgba(8, 8, 8, .82)),
+          linear-gradient(90deg, rgba(8, 8, 8, .66), transparent);
+      }
+      .edition { display: none; }
+      .content { top: 44%; transform: translateY(-45%); }
+      .title {
+        font-size: clamp(68px, 24vw, 112px);
+        line-height: .77;
+        letter-spacing: -.065em;
+      }
+      .word-dreams,
+      .word-dreams::after {
+        margin-left: 0;
+        left: 0;
+      }
+      .statement {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        width: min(82vw, 420px);
+        margin: 34px 0 0;
+      }
+      .statement .meta { max-width: 230px; }
+      .controls {
+        left: clamp(30px, 7vw, 44px);
+        right: auto;
+        bottom: clamp(30px, 8vw, 48px);
+      }
+      .pulse-bar { width: 74px; }
+      .frame::before { left: 20vw; width: 54px; }
+    }
+    @media (max-height: 670px) and (min-width: 761px) {
+      .content { transform: translateY(-43%); }
+      .statement { margin-top: 24px; }
+      .title { font-size: min(12vw, 150px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+      .film video {
+        transform: translate3d(8vw, -1vh, 0) scale(1.5);
+      }
+      .scan { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="hero" id="hero">
+    <div class="film" aria-hidden="true">
+      <video id="hero-video" autoplay muted loop playsinline preload="auto">
+        <source src="https://i.urusai.cc/8lHGM.mp4" type="video/mp4">
+      </video>
+      <div class="fallback" hidden>Signal source unavailable</div>
+    </div>
+    <div class="shutters" aria-hidden="true">
+      <span class="shutter"></span><span class="shutter"></span><span class="shutter"></span>
+      <span class="shutter"></span><span class="shutter"></span><span class="shutter"></span>
+    </div>
+    <div class="scan" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="frame" aria-hidden="true"></div>
+    <header class="masthead">
+      <p class="brand">MRT Management Platform</p>
+      <p class="edition">Engineering • Operations • Management</p>
+    </header>
+    <section class="content" aria-labelledby="hero-title">
+      <p class="kicker">Executive Decision Support System</p>
+      <h1 class="title" id="hero-title">
+        <span class="word word-machine"><span class="word-inner">MRT</span></span>
+        <span class="word word-dreams"><span class="word-inner">Dashboard</span></span>
+      </h1>
+      <div class="statement">
+        <p>Real-time visibility into project health and operational performance.</p>
+        <p class="meta">Integrating schedule, quality, risk, safety and contract management information.</p>
+      </div>
+    </section>
+    <div class="controls">
+      <div class="pulse-bar" aria-hidden="true"><span></span></div>
+      <button class="play-control" id="play-control" type="button" aria-label="暫停背景影片" aria-pressed="true">
+        System status
+      </button>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script>
+  (() => {
+    const video = document.getElementById('hero-video');
+    const control = document.getElementById('play-control');
+    const fallback = document.querySelector('.fallback');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let revealed = false;
+    let intro;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playbackRate = 1.18;
+    const setControl = (playing) => {
+      control.textContent = playing ? 'System status' : 'Play signal';
+      control.setAttribute('aria-label', playing ? '暫停背景影片' : '播放背景影片');
+      control.setAttribute('aria-pressed', playing ? 'true' : 'false');
+    };
+    const attemptPlay = () => {
+      const promise = video.play();
+      if (promise && typeof promise.catch === 'function') {
+        promise.catch(() => setControl(false));
+      }
+    };
+    video.addEventListener('playing', () => {
+      fallback.hidden = true;
+      setControl(true);
+    });
+    video.addEventListener('pause', () => setControl(false));
+    video.addEventListener('error', () => {
+      fallback.hidden = false;
+      setControl(false);
+    });
+    control.addEventListener('click', () => {
+      if (video.paused) {
+        attemptPlay();
+      } else {
+        video.pause();
+      }
+    });
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      attemptPlay();
+      if (typeof gsap === 'undefined') {
+        document.querySelectorAll('.shutter').forEach((item) => {
+          item.style.transform = 'scaleY(0)';
+        });
+        return;
+      }
+      gsap.defaults({ ease: 'power4.out' });
+      gsap.set('.word-inner', { yPercent: 112, skewY: 7 });
+      gsap.set(['.kicker', '.statement', '.masthead', '.controls'], { autoAlpha: 0 });
+      intro = gsap.timeline({ defaults: { duration: .9 } });
+      intro
+        .to('.shutter', {
+          scaleY: 0,
+          duration: 1.25,
+          stagger: { each: .075, from: 'random' },
+          ease: 'expo.inOut'
+        }, 0)
+        .to('.masthead', { autoAlpha: 1, duration: .7 }, .42)
+        .to('.word-inner', {
+          yPercent: 0,
+          skewY: 0,
+          duration: 1.15,
+          stagger: .12,
+          ease: 'expo.out'
+        }, .48)
+        .to('.kicker', { autoAlpha: 1, x: 0, duration: .65 }, .62)
+        .fromTo('.kicker', { x: -26 }, { x: 0, duration: .65 }, .62)
+        .to('.statement', { autoAlpha: 1, y: 0, duration: .8 }, .82)
+        .fromTo('.statement', { y: 24 }, { y: 0, duration: .8 }, .82)
+        .to('.controls', { autoAlpha: 1, duration: .55 }, 1.06);
+      if (!reduceMotion) {
+        gsap.fromTo(video, {
+          scale: 1.5,
+          xPercent: 8,
+          yPercent: -1
+        }, {
+          scale: 1.56,
+          xPercent: 9,
+          yPercent: 0,
+          duration: 12,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut'
+        });
+        gsap.to('.scan', {
+          y: '135vh',
+          duration: 4.8,
+          repeat: -1,
+          repeatDelay: 1.4,
+          ease: 'power1.inOut'
+        });
+        gsap.to('.pulse-bar span', {
+          x: '350%',
+          duration: 1.65,
+          repeat: -1,
+          ease: 'power2.inOut'
+        });
+        const glitch = gsap.timeline({ repeat: -1, repeatDelay: 4.6 });
+        glitch
+          .to('.word-dreams', { x: 6, duration: .055, ease: 'none' })
+          .to('.word-dreams', { x: -4, duration: .055, ease: 'none' })
+          .to('.word-dreams', { x: 0, duration: .06, ease: 'none' });
+        if (window.matchMedia('(pointer: fine)').matches) {
+          const moveX = gsap.quickTo('.content', 'x', { duration: .8, ease: 'power3.out' });
+          const moveY = gsap.quickTo('.content', 'y', { duration: .8, ease: 'power3.out' });
+          window.addEventListener('pointermove', (event) => {
+            const px = event.clientX / window.innerWidth - .5;
+            const py = event.clientY / window.innerHeight - .5;
+            moveX(px * 18);
+            moveY(py * 10);
+          }, { passive: true });
+        }
+      }
+    };
+    if (document.readyState === 'complete') {
+      reveal();
+    } else {
+      window.addEventListener('load', reveal, { once: true });
+      setTimeout(reveal, 1800);
+    }
+  })();
+  </script>
+</body>
+</html>
